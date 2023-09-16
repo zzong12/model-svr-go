@@ -33,5 +33,7 @@ RUN cd /src \
 
 WORKDIR /workspaces
 
+ENV MODEL_REPO=/workspaces/model-repo
+
 ENTRYPOINT ["/workspace/server"]
 

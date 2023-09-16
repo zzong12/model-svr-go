@@ -8,6 +8,8 @@ import (
 	"github.com/getumen/go-treelite"
 )
 
+var _ Model = (*TreeliteModel)(nil)
+
 type TreeliteModel struct {
 	*baseModel
 	predictor *treelite.Predictor

@@ -2,6 +2,7 @@ package model
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/getumen/go-treelite"
 )
 
 var (
@@ -71,7 +74,7 @@ func LoadModelRepo(path string, autoReload bool) error {
 				modelPath := filepath.Join(path, modelDir.Name(), versionDir.Name(), modelFile.Name())
 				modelName := modelDir.Name()
 				versionName := versionDir.Name()
-				modelSuffix := modelName[len(modelName)-3:]
+				modelSuffix := filepath.Ext(modelPath)
 				modelMd5, _ := getFileMd5(modelPath)
 
 				oldModel := GetModel(modelName, versionName)
@@ -91,10 +94,18 @@ func LoadModelRepo(path string, autoReload bool) error {
 					Uptime:  time.Now(),
 					Md5:     modelMd5,
 				}
-				if modelSuffix != ".so" {
+				switch modelSuffix {
+				case treelite.GetSharedLibExtension(): // so/dll/dylib
 					model = &TreeliteModel{
 						baseModel: baseModel,
 					}
+				// case ".pmml":
+				// 	model = &PmmlModel{
+				// 		baseModel: baseModel,
+				// 	}
+				default:
+					log.Println("unknown model:", modelPath)
+					continue
 				}
 
 				err := model.Load()
@@ -173,7 +184,7 @@ func GetModels() []string {
 func Predict(name string, version string, features [][]float64) ([]float64, error) {
 	model := GetModel(name, version)
 	if model == nil {
-		return nil, nil
+		return nil, errors.New(fmt.Sprintf("Can't found model, %s.%s", name, version))
 	}
 	return model.Predict(features)
 }

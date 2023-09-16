@@ -10,7 +10,7 @@ import (
 type (
 	PredictRequest struct {
 		ModelName    string        `json:"model_name"`
-		Version      string        `json:"version"`
+		ModelVersion string        `json:"model_version"`
 		RequestItems []RequestItem `json:"items"`
 	}
 	RequestItem struct {
@@ -35,10 +35,10 @@ func predict(c *gin.Context) {
 	}
 
 	features := make([][]float64, 0, len(req.RequestItems))
-	for i, item := range req.RequestItems {
-		features[i] = item.Features
+	for _, item := range req.RequestItems {
+		features = append(features, item.Features)
 	}
-	res, err := model.Predict(req.ModelName, req.Version, features)
+	res, err := model.Predict(req.ModelName, req.ModelVersion, features)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -46,10 +46,10 @@ func predict(c *gin.Context) {
 
 	respItems := make([]ResponseItem, 0, len(req.RequestItems))
 	for i, item := range req.RequestItems {
-		respItems[i] = ResponseItem{
+		respItems = append(respItems, ResponseItem{
 			Id:    item.Id,
 			Score: res[i],
-		}
+		})
 	}
 	c.JSON(http.StatusOK, PredictResponse{
 		Items: respItems,
